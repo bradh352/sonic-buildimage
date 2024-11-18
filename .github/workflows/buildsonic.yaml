@@ -1,0 +1,64 @@
+name: Build Sonic
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: self-hosted
+    name: "Build Sonic"
+    steps:
+      - name: Install needed packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sudo curl wget ca-certificates cmake ninja-build autoconf automake libtool g++ pkg-config python3-pip git
+          sudo apt-get dist-upgrade -y --assume-yes
+      - name: Install j2cli
+        run: |
+          pip3 install --user j2cli
+      - name: Clean up from prior runs
+        run: |
+          docker image prune --all --force
+          mydir=`pwd`
+          sudo rm -rf *
+          sudo rm -rf .git
+          cd ..
+          sudo rm -rf ${mydir}
+          mkdir -p ${mydir}
+          cd ${mydir}
+          sudo rm -rf /var/cache/sonic
+      - name: Checkout sonic-build
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          fetch-depth: 0
+      - name: "Build Broadcom"
+        run: |
+          sudo mkdir -p /var/cache/sonic/artifacts
+          sudo chown $USER: /var/cache/sonic/artifacts
+          sudo chmod 777 /var/cache/sonic/artifacts
+          make init
+          make configure PLATFORM=broadcom
+          make SONIC_BUILD_JOBS=4 target/sonic-broadcom.bin
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "sonic-broadcom.bin"
+          path: 'target/sonic-broadcom.bin'
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 30
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          draft: false
+          make_latest: true
+          generate_release_notes: true
+          files: target/sonic-broadcom.bin
+          fail_on_unmatched_files: true
+          discussion_category_name: "Announcements"
