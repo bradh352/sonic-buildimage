@@ -24,6 +24,7 @@ jobs:
       - name: Clean up from prior runs
         run: |
           docker image prune --all --force
+          docker builder prune --all
           mydir=`pwd`
           sudo rm -rf *
           sudo rm -rf .git
