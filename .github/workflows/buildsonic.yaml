@@ -2,6 +2,7 @@ name: Build Sonic
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref }}
@@ -23,6 +24,7 @@ jobs:
       - name: Clean up from prior runs
         run: |
           docker image prune --all --force
+          docker builder prune --all
           mydir=`pwd`
           sudo rm -rf *
           sudo rm -rf .git
@@ -61,4 +63,3 @@ jobs:
           generate_release_notes: true
           files: target/sonic-broadcom.bin
           fail_on_unmatched_files: true
-          discussion_category_name: "Announcements"
