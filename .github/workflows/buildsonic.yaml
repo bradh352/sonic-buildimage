@@ -2,6 +2,7 @@ name: Build Sonic
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.ref }}
