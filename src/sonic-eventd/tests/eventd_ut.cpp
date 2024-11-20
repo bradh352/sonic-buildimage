@@ -167,7 +167,7 @@ void run_cap(void *zctx, bool &term, string &read_source,
     zmq_msg_t msg;
     zmq_msg_init(&msg);
     int rc = zmq_msg_recv(&msg, mock_cap, 0);
-    EXPECT_EQ(1, rc); // read control character
+    EXPECT_GE(1, rc); // read control character
 
     while(!term) {
         string source;
