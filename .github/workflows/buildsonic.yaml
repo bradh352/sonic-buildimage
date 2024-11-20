@@ -24,7 +24,7 @@ jobs:
       - name: Clean up from prior runs
         run: |
           docker image prune --all --force
-          docker builder prune --all
+          docker builder prune --all --force
           mydir=`pwd`
           sudo rm -rf *
           sudo rm -rf .git
@@ -38,13 +38,17 @@ jobs:
         with:
           submodules: "recursive"
           fetch-depth: 0
-      - name: "Build Broadcom"
+      - name: "Make Init"
         run: |
           sudo mkdir -p /var/cache/sonic/artifacts
           sudo chown $USER: /var/cache/sonic/artifacts
           sudo chmod 777 /var/cache/sonic/artifacts
           make init
+      - name: Configure Broadcom
+        run: |
           make configure PLATFORM=broadcom
+      - name: Make target/sonic-broadcom.bin
+        run: |
           make SONIC_BUILD_JOBS=4 target/sonic-broadcom.bin
       - name: Upload artifact
         uses: actions/upload-artifact@v4
