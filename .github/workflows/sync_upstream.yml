@@ -1,0 +1,43 @@
+name: 'Sync With Upstream'
+
+on:
+  schedule:
+    - cron:  '30 0 * * *'
+      tags-ignore:
+        - '**'
+  workflow_dispatch:
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from upstream repo
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    steps:
+      - name: Checkout sonic-build
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Update
+        run: |
+          git config --global user.name '[github actions]'
+          git config --global user.email 'bradh352@users.noreply.github.com'
+          git pull
+          git remote add upstream https://github.com/sonic-net/sonic-buildimage.git
+          git fetch upstream
+          if ! git rebase upstream/202211 ; then
+            while ! git rebase --skip ; do
+              echo "Skipped Commit"
+            done
+          fi
+          git submodule update --init --recursive
+          cd src/sonic-swss
+          git checkout 202211-broadcom
+          git pull
+          cd ../..
+          git add .
+          if git status | grep "nothing to commit" > /dev/null ; then
+            echo "nothing to commit"
+          else
+            git commit -am "update sonic-swss and sonic-sairedis branches"
+          fi
+          git push --force
