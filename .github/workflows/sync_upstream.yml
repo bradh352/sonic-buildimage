@@ -1,0 +1,26 @@
+name: 'Sync With Upstream'
+
+on:
+  schedule:
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  sync_master:
+    uses: bradh352/sonic-buildimage/.github/workflows/reuse-sync.yml@bradh352/master
+    with:
+      upstream_repo: "sonic-net/sonic-buildimage"
+      upstream_branch: "master"
+      local_branch: "bradh352/master"
+      sub_projects: "sonic-net/sonic-swss sonic-net/sonic-sairedis sonic-net/sonic-utilities sonic-net/sonic-platform-daemons sonic-net/sonic-host-services"
+      sub_project_path: "src"
+    secrets: inherit
+  sync_202411:
+    uses: bradh352/sonic-buildimage/.github/workflows/reuse-sync.yml@bradh352/master
+    with:
+      upstream_repo: "sonic-net/sonic-buildimage"
+      upstream_branch: "202411"
+      local_branch: "bradh352/202411"
+      sub_projects: "sonic-net/sonic-swss sonic-net/sonic-sairedis sonic-net/sonic-utilities sonic-net/sonic-platform-daemons sonic-net/sonic-host-services"
+      sub_project_path: "src"
+    secrets: inherit
