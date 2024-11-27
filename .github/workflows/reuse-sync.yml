@@ -1,0 +1,72 @@
+name: 'Reusable workflow to Sync with Upstream'
+
+on:
+  workflow_call:
+    inputs:
+      upstream_repo:
+        required: true
+        type: string
+      upstream_branch:
+        required: true
+        type: string
+      local_branch:
+        required: true
+        type: string
+      sub_projects:
+        required: false
+        type: string
+      sub_project_path:
+        required: false
+        type: string
+
+env:
+  upstream_repo: ${{ inputs.upstream_repo }}
+  upstream_branch: ${{ inputs.upstream_branch }}
+  local_branch: ${{ inputs.local_branch }}
+  sub_projects: ${{ inputs.sub_projects }}
+  sub_project_path: ${{ inputs.sub_project_path || 'src' }}
+
+jobs:
+  sync_latest_from_upstream:
+    runs-on: ubuntu-latest
+    name: Sync latest commits from upstream repo
+    steps:
+      - name: Clone Repository
+        run: |
+          git clone --no-single-branch -b ${local_branch} https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY} ./
+          git config --global user.name '[github actions]'
+          git config --global user.email "${GITHUB_REPOSITORY_OWNER}@users.noreply.github.com"
+      - name: Fetch upstream
+        run: |
+          git remote add upstream https://github.com/${upstream_repo}
+          git fetch upstream
+      - name: Rebase
+        run: |
+          echo "Rebase ${local_branch} to upstream/${upstream_branch}"
+          if ! git rebase upstream/${upstream_branch} ; then
+            while ! git rebase --skip ; do
+              echo "Skipped Commit"
+            done
+          fi
+      - name: Update Submodules
+        if: ${{ inputs.sub_projects }}
+        run: |
+          git submodule update --init --recursive
+          for project in ${sub_projects} ; do
+            name=`echo ${project} | cut -d / -f 2`
+            echo "Update submodule $name in path $sub_project_path"
+            pushd ${sub_project_path}/${name}
+            git checkout ${local_branch}
+            git pull
+            popd
+          done
+          git add .
+          if git status | grep "nothing to commit" > /dev/null ; then
+            echo "nothing to commit"
+          else
+            git commit -am "[github actions] update ${sub_projects} branches"
+          fi
+      - name: Push
+        run: |
+          git push --force
+
