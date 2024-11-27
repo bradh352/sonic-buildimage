@@ -34,7 +34,10 @@ jobs:
           git checkout master-broadcom
           git pull
           cd ../sonic-sairedis
-          git checkout master
+          git checkout master-broadcom
+          git pull
+          cd ../sonic-platform-daemons
+          git checkout master-broadcom
           git pull
           cd ../..
           git add .
