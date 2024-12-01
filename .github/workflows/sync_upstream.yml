@@ -36,6 +36,9 @@ jobs:
           cd ../sonic-sairedis
           git checkout master-broadcom
           git pull
+          cd ../sonic-platform-daemons
+          git checkout master-broadcom
+          git pull
           cd ../..
           git add .
           if git status | grep "nothing to commit" > /dev/null ; then
