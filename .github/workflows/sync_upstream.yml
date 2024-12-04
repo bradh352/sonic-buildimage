@@ -33,6 +33,9 @@ jobs:
           cd src/sonic-swss
           git checkout 202211-broadcom
           git pull
+          cd ../sonic-platform-daemons
+          git checkout 202211-broadcom
+          git pull
           cd ../..
           git add .
           if git status | grep "nothing to commit" > /dev/null ; then
