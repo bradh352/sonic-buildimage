@@ -46,7 +46,7 @@ jobs:
           make init
       - name: Configure Broadcom
         run: |
-          make configure PLATFORM=broadcom
+          make configure PLATFORM=broadcom SONIC_VERSION_CONTROL_COMPONENTS=none
       - name: Make target/sonic-broadcom.bin
         run: |
           make SONIC_BUILD_JOBS=8 target/sonic-broadcom.bin
