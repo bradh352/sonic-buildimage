@@ -275,8 +275,8 @@ libxslt1.1==1.1.35-1
 libxtables12==1.8.9-2
 libyajl2==2.1.0-3+deb12u2
 libyaml-0-2==0.2.5-1
-libyang==1.0.73
-libyang-cpp==1.0.73
+libyang==1.0.225
+libyang-cpp==1.0.225
 libzmq5==4.3.4-6
 linux-base==4.9
 linux-image-6.1.0-22-2-amd64-unsigned==6.1.94-1

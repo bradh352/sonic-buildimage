@@ -32,9 +32,9 @@ libteam-dev==1.31-1
 libteam-utils==1.31-1
 libteam5==1.31-1
 libteamdctl0==1.31-1
-libyang==1.0.73
-libyang-cpp==1.0.73
-libyang-dev==1.0.73
+libyang==1.0.225
+libyang-cpp==1.0.225
+libyang-dev==1.0.225
 linux-headers-6.1.0-22-2-amd64==6.1.94-1
 linux-headers-6.1.0-22-2-arm64==6.1.94-1
 linux-headers-6.1.0-22-2-common==6.1.94-1

@@ -1,35 +1,46 @@
 # libyang
 
 LIBYANG_VERSION_BASE = 1.0
-LIBYANG_VERSION = $(LIBYANG_VERSION_BASE).73
-LIBYANG_SUBVERSION = 1
+LIBYANG_VERSION = $(LIBYANG_VERSION_BASE).225
+LIBYANG_SUBVERSION = 1.1
+LIBYANG_FULLVERSION = $(LIBYANG_VERSION)-$(LIBYANG_SUBVERSION)
 
 export LIBYANG_VERSION_BASE
 export LIBYANG_VERSION
 export LIBYANG_SUBVERSION
+export LIBYANG_FULLVERSION
 
-LIBYANG = libyang_$(LIBYANG_VERSION)_$(CONFIGURED_ARCH).deb
+LIBYANG = libyang_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
 $(LIBYANG)_SRC_PATH = $(SRC_PATH)/libyang
-# introduce artifical dependency between LIBYANG and FRR
-# make sure LIBYANG is compile after FRR
-$(LIBYANG)_AFTER = $(FRR)
 SONIC_MAKE_DEBS += $(LIBYANG)
 
-LIBYANG_DEV = libyang-dev_$(LIBYANG_VERSION)_$(CONFIGURED_ARCH).deb
+LIBYANG_DEV = libyang-dev_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
 $(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_DEV)))
 
-LIBYANG_DBGSYM = libyang-dbgsym_$(LIBYANG_VERSION)_$(CONFIGURED_ARCH).deb
-$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_DBGSYM)))
+LIBYANG_DBG = libyang-dbgsym_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
+$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_DBG)))
 
-LIBYANG_CPP = libyang-cpp_$(LIBYANG_VERSION)_$(CONFIGURED_ARCH).deb
+LIBYANG_CPP = libyang-cpp_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
 $(LIBYANG_CPP)_DEPENDS += $(LIBYANG)
 $(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_CPP)))
 
-LIBYANG_PY3 = python3-yang_$(LIBYANG_VERSION)_$(CONFIGURED_ARCH).deb
-$(LIBYANG_PY3)_DEPENDS += $(LIBYANG) $(LIBYANG_CPP)
-$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_PY3)))
+LIBYANG_CPP_DEV = libyang-cpp-dev_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
+$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_CPP_DEV)))
 
-$(eval $(call add_conflict_package,$(LIBYANG),$(LIBYANG1),$(LIBYANG2)))
-$(eval $(call add_conflict_package,$(LIBYANG_DEV),$(LIBYANG1_DEV),$(LIBYANG2_DEV)))
+LIBYANG_CPP_DBG = libyang-cpp-dbgsym_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
+$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_CPP_DBG)))
 
-export LIBYANG LIBYANG_DBGSYM LIBYANG_DEV LIBYANG_CPP LIBYANG_PY3
+YANG_TOOLS = yang-tools_$(LIBYANG_FULLVERSION)_all.deb
+$(YANG_TOOLS)_DEPENDS += $(LIBYANG)
+$(eval $(call add_derived_package,$(LIBYANG),$(YANG_TOOLS)))
+
+LIBYANG_TOOLS = libyang-tools_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
+$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_TOOLS)))
+
+LIBYANG_TOOLS_DBG = libyang-tools-dbgsym_$(LIBYANG_FULLVERSION)_$(CONFIGURED_ARCH).deb
+$(eval $(call add_derived_package,$(LIBYANG),$(LIBYANG_TOOLS_DBG)))
+
+$(eval $(call add_conflict_package,$(LIBYANG),$(LIBYANG2)))
+$(eval $(call add_conflict_package,$(LIBYANG_DEV),$(LIBYANG2_DEV)))
+
+export LIBYANG LIBYANG_DBG LIBYANG_DEV LIBYANG_CPP LIBYANG_CPP_DEV LIBYANG_CPP_DBG YANG_TOOLS LIBYANG_TOOLS LIBYANG_TOOLS_DBG
