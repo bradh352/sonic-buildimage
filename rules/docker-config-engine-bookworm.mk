@@ -6,15 +6,15 @@ $(DOCKER_CONFIG_ENGINE_BOOKWORM)_PATH = $(DOCKERS_PATH)/docker-config-engine-boo
 $(DOCKER_CONFIG_ENGINE_BOOKWORM)_DEPENDS += $(LIBSWSSCOMMON) \
                                           $(LIBYANG) \
                                           $(LIBYANG_CPP) \
-                                          $(LIBYANG_PY3) \
                                           $(PYTHON3_SWSSCOMMON) \
                                           $(SONIC_DB_CLI) \
                                           $(SONIC_EVENTD)
 $(DOCKER_CONFIG_ENGINE_BOOKWORM)_PYTHON_WHEELS += $(SONIC_PY_COMMON_PY3) \
                                                   $(SONIC_YANG_MGMT_PY3) \
                                                   $(SONIC_YANG_MODELS_PY3) \
-                                                  $(SONIC_CONTAINERCFGD)
-$(DOCKER_CONFIG_ENGINE_BOOKWORM)_PYTHON_WHEELS += $(SONIC_CONFIG_ENGINE_PY3)
+                                                  $(SONIC_CONTAINERCFGD) \
+                                                  $(SONIC_CONFIG_ENGINE_PY3) \
+                                                  $(LIBYANG_PY3)
 $(DOCKER_CONFIG_ENGINE_BOOKWORM)_LOAD_DOCKERS += $(DOCKER_BASE_BOOKWORM)
 $(DOCKER_CONFIG_ENGINE_BOOKWORM)_FILES += $(SWSS_VARS_TEMPLATE)
 $(DOCKER_CONFIG_ENGINE_BOOKWORM)_FILES += $(RSYSLOG_PLUGIN_CONF_J2)

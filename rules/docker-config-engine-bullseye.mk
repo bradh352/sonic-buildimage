@@ -6,15 +6,15 @@ $(DOCKER_CONFIG_ENGINE_BULLSEYE)_PATH = $(DOCKERS_PATH)/docker-config-engine-bul
 $(DOCKER_CONFIG_ENGINE_BULLSEYE)_DEPENDS += $(LIBSWSSCOMMON) \
                                           $(LIBYANG) \
                                           $(LIBYANG_CPP) \
-                                          $(LIBYANG_PY3) \
                                           $(PYTHON3_SWSSCOMMON) \
                                           $(SONIC_DB_CLI) \
                                           $(SONIC_EVENTD)
 $(DOCKER_CONFIG_ENGINE_BULLSEYE)_PYTHON_WHEELS += $(SONIC_PY_COMMON_PY3) \
                                                   $(SONIC_YANG_MGMT_PY3) \
                                                   $(SONIC_YANG_MODELS_PY3) \
-                                                  $(SONIC_CONTAINERCFGD)
-$(DOCKER_CONFIG_ENGINE_BULLSEYE)_PYTHON_WHEELS += $(SONIC_CONFIG_ENGINE_PY3)
+                                                  $(SONIC_CONTAINERCFGD) \
+                                                  $(SONIC_CONFIG_ENGINE_PY3) \
+                                                  $(LIBYANG_PY3) 
 $(DOCKER_CONFIG_ENGINE_BULLSEYE)_LOAD_DOCKERS += $(DOCKER_BASE_BULLSEYE)
 $(DOCKER_CONFIG_ENGINE_BULLSEYE)_FILES += $(SWSS_VARS_TEMPLATE)
 $(DOCKER_CONFIG_ENGINE_BULLSEYE)_FILES += $(RSYSLOG_PLUGIN_CONF_J2)
