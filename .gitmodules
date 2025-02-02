@@ -133,3 +133,8 @@
 [submodule "platform/vpp"]
 	path = platform/vpp
 	url = https://github.com/sonic-net/sonic-platform-vpp.git
+[submodule "src/libyang-py3"]
+	path = src/libyang-py3
+	url = https://github.com/CESNET/libyang-python.git
+	# Tag 3.0.3
+
