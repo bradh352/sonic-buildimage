@@ -4,9 +4,9 @@ SHELL = /bin/bash
 
 LIBYANG_URL = http://debian-archive.trafficmanager.net/debian/pool/main/liby/libyang
 
-DSC_FILE = libyang_$(LIBYANG_FULLVERSION).dsc
+DSC_FILE = libyang_$(LIBYANG_DEBVERSION).dsc
 ORIG_FILE = libyang_$(LIBYANG_VERSION).orig.tar.gz
-DEBIAN_FILE = libyang_$(LIBYANG_FULLVERSION).debian.tar.xz
+DEBIAN_FILE = libyang_$(LIBYANG_DEBVERSION).debian.tar.xz
 
 DSC_FILE_URL = $(LIBYANG_URL)/$(DSC_FILE)
 ORIG_FILE_URL = $(LIBYANG_URL)/$(ORIG_FILE)
@@ -16,17 +16,19 @@ MAIN_TARGET = $(LIBYANG)
 DERIVED_TARGETS = $(LIBYANG_DEV) $(LIBYANG_DBG) $(LIBYANG_CPP) $(LIBYANG_CPP_DEV) $(LIBYANG_CPP_DBG) $(YANG_TOOLS) $(LIBYANG_TOOLS) $(LIBYANG_TOOLS_DBG)
 
 $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
-        # Obtaining the libyang
+	# Obtaining the libyang
 	rm -fr ./libyang-$(LIBYANG_VERSION)
 
 	# download debian libyang
 	wget -NO "$(DSC_FILE)" $(DSC_FILE_URL)
 	wget -NO "$(ORIG_FILE)" $(ORIG_FILE_URL)
 	wget -NO "$(DEBIAN_FILE)" $(DEBIAN_FILE_URL)
-	dpkg-source -x libyang_$(LIBYANG_FULLVERSION).dsc
+	dpkg-source -x libyang_$(LIBYANG_DEBVERSION).dsc
 
 	# Rename back to just libyang instead of libyang1 for compatibility with v1.0.73
 	pushd libyang-$(LIBYANG_VERSION)
+	patch -p1 < ../patches/01-revert-json-datatype-validation.patch
+	patch -p1 < ../patches/02-update-deb-version.patch
 	sed -i -e 's/libyang1/libyang/g' -e 's/libyang-cpp1/libyang-cpp/g' debian/control debian/libyang1.lintian-overrides debian/libyang1.symbols
 	mv debian/libyang-cpp1.install debian/libyang-cpp.install
 	mv debian/libyang1.install debian/libyang.install

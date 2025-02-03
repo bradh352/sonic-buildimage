@@ -1,0 +1,13 @@
+diff -ruN libyang-1.0.225.old/debian/changelog libyang-1.0.225/debian/changelog
+--- libyang-1.0.225.old/debian/changelog	2021-06-23 16:46:11
++++ libyang-1.0.225/debian/changelog	2025-02-03 11:29:43
+@@ -1,3 +1,9 @@
++libyang (1.0.225-1.1+b1sonic1) unstable; urgency=medium
++
++  * remove json data type validation for sonic compatibility
++
++ -- Brad House <brad@brad-house.com>  Mon, 3 Feb 2025 11:28:00 -0500
++
+ libyang (1.0.225-1.1) unstable; urgency=medium
+ 
+   * Non-maintainer upload.

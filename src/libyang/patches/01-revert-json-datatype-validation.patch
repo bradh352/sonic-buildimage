@@ -1,0 +1,56 @@
+JSON Data type validation was added in
+https://github.com/CESNET/libyang/commit/10bafbb9a787d65a5a4d600dd76982024fc3ffa4
+
+Unfortunately since SONiC is well established and there are lots of users that aren't
+strictly conforming with JSON data types, we cannot enable this.  There are lots of
+test cases that will fail as well due to the use of the wrong data type.
+
+Revert
+
+diff --git a/src/parser_json.c b/src/parser_json.c
+index 38bb760da..c1aca0783 100644
+--- a/src/parser_json.c
++++ b/src/parser_json.c
+@@ -462,17 +462,6 @@ repeat:
+     leaf->value_type = stype->base;
+ 
+     if (data[len] == '"') {
+-        if ((leaf->value_type == LY_TYPE_INT8) || (leaf->value_type == LY_TYPE_INT16) ||
+-                (leaf->value_type == LY_TYPE_INT32) || (leaf->value_type == LY_TYPE_UINT8) ||
+-                (leaf->value_type == LY_TYPE_UINT16) || (leaf->value_type == LY_TYPE_UINT32)) {
+-            LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, leaf, "JSON data (expected number, but found string)");
+-            return 0;
+-        }
+-        if (leaf->value_type == LY_TYPE_BOOL) {
+-            LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, leaf, "JSON data (expected boolean, but found string)");
+-            return 0;
+-        }
+-
+         /* string representations */
+         ++len;
+         str = lyjson_parse_text(ctx, &data[len], &r);
+@@ -488,12 +477,6 @@ repeat:
+         }
+         len += r + 1;
+     } else if (data[len] == '-' || isdigit(data[len])) {
+-        if ((leaf->value_type == LY_TYPE_INT64) || (leaf->value_type == LY_TYPE_UINT64) ||
+-                (leaf->value_type == LY_TYPE_STRING)) {
+-            LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, leaf, "JSON data (expected string, but found number)");
+-            return 0;
+-        }
+-
+         /* numeric type */
+         r = lyjson_parse_number(ctx, &data[len]);
+         if (!r) {
+@@ -512,11 +495,6 @@ repeat:
+         }
+         len += r;
+     } else if (data[len] == 'f' || data[len] == 't') {
+-        if (leaf->value_type == LY_TYPE_STRING) {
+-            LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, leaf, "JSON data (expected string, but found boolean)");
+-            return 0;
+-        }
+-
+         /* boolean */
+         r = lyjson_parse_boolean(ctx, &data[len]);
+         if (!r) {
