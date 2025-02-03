@@ -529,19 +529,6 @@
             }
          }
     },
-    "SNMP_AGENT_ADDRESS_CONFIG_EMPTY_PORT_NUMBER": {
-        "sonic-snmp:sonic-snmp": {
-            "sonic-snmp:SNMP_AGENT_ADDRESS_CONFIG": {
-                "SNMP_AGENT_ADDRESS_CONFIG_LIST": [
-                    {
-                       "agent_ip": "10.0.0.1",
-                       "port": "",
-                       "vrf_name": "mgmt"
-                    }
-                ]
-            }
-         }
-    },
     "SNMP_AGENT_ADDRESS_CONFIG_MGMT_VRF": {
         "sonic-snmp:sonic-snmp": {
             "sonic-snmp:SNMP_AGENT_ADDRESS_CONFIG": {
@@ -573,7 +560,7 @@
                 "SNMP_AGENT_ADDRESS_CONFIG_LIST": [
                     {
                        "agent_ip": "10.0.0.1",
-		       "port": "65536",
+                       "port": 65536,
                        "vrf_name": "mgmt"
                     }
                 ]

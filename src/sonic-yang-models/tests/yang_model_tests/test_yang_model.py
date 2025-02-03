@@ -1,6 +1,6 @@
 # This script is used to
 
-import yang as ly
+import libyang as ly
 import logging
 import argparse
 import sys
@@ -112,7 +112,8 @@ class Test_yang_models:
             # load yang modules
             for file in yangFiles:
                 log.debug(file)
-                m = self.ctx.parse_module_path(file, ly.LYS_IN_YANG)
+                f = open(file, 'r')
+                m = self.ctx.parse_module_file(f, "yang")
                 if m is not None:
                     log.info("module: {} is loaded successfully".format(m.name()))
                 else:
@@ -169,18 +170,16 @@ class Test_yang_models:
     def loadConfigData(self, jInput, verify=None):
         s = ""
         try:
-            node = self.ctx.parse_data_mem(jInput, ly.LYD_JSON, \
-            ly.LYD_OPT_CONFIG | ly.LYD_OPT_STRICT)
+            node = self.ctx.parse_data_mem(jInput, "json", strict=True, config=True)
             # verify the data tree if asked
             if verify is not None:
                 xpath = verify['xpath']
                 log.info("Verify xpath: {}".format(xpath))
-                set = node.find_path(xpath)
-                for dnode in set.data():
+                nodes = node.find_all(xpath)
+                for dnode in nodes:
                     if (xpath == dnode.path()):
                         log.info("Verify dnode: {}".format(dnode.path()))
-                        data = dnode.print_mem(ly.LYD_JSON, ly.LYP_WITHSIBLINGS \
-                            | ly.LYP_FORMAT | ly.LYP_WD_ALL)
+                        data = dnode.print_mem("json", with_siblings=True, pretty=True, include_implicit_defaults=True)
                         data = json.loads(data)
                         log.info("Verify data: {}".format(data))
                         assert (data[verify['key']] == verify['value'])
