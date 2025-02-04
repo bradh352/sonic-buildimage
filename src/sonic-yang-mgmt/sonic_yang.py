@@ -625,7 +625,7 @@ class SonicYang(SonicYangExtMixin):
             return None
 
         if (schema_node is not None):
-           return schema_node.type().base()
+           return schema_node.type()
 
         return None
 
