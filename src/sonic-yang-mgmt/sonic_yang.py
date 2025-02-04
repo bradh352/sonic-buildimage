@@ -391,7 +391,7 @@ class SonicYang(SonicYangExtMixin):
         try:
             data_node = self._find_data_node(data_xpath)
             if data_node != None:
-                path = data_node.schema().path()
+                path = data_node.schema().schema_path()
 
             return path
         except Exception as e:
