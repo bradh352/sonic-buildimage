@@ -15,7 +15,7 @@ class YangModel:
         self._load_model()
 
     def _load_model(self) -> None:
-        self.ctx = ly.Context(self.model_dir)
+        self.ctx = ly.Context(self.model_dir, loose_json_datatypes=True)
         yang_files = glob(self.model_dir +"/*.yang")
 
         for file in yang_files:

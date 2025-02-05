@@ -106,7 +106,7 @@ class Test_yang_models:
 
         try:
             # create context
-            self.ctx = ly.Context(yangDir)
+            self.ctx = ly.Context(yangDir, loose_json_datatypes=True)
             # get all files
             yangFiles = glob(yangDir +"/*.yang")
             # load yang modules
