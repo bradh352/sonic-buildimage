@@ -4,20 +4,21 @@ import libyang as ly
 from json import dumps
 from glob import glob
 
-
 class YangModel:
 
     def __init__(self) -> None:
         cur_dir = os.path.dirname(os.path.abspath(__file__))
         project_root = os.path.abspath(os.path.join(cur_dir, '..', '..'))
         self.model_dir = os.path.join(project_root, 'yang-models')
-
         self._load_model()
+
+    def __del__(self) -> None:
+        self.ctx.destroy()
+        self.ctx = None
 
     def _load_model(self) -> None:
         self.ctx = ly.Context(self.model_dir, loose_json_datatypes=True)
         yang_files = glob(self.model_dir +"/*.yang")
-
         for file in yang_files:
             with open(file, 'r') as f:
                 m = self.ctx.parse_module_file(f, "yang")
@@ -25,7 +26,8 @@ class YangModel:
                     raise RuntimeError("Failed to parse '{file}' model")
 
     def _load_data(self, data) -> None:
-        self.ctx.parse_data_mem(dumps(data), "json", strict=True, no_state=True)
+        dnode = self.ctx.parse_data_mem(dumps(data), "json", strict=True, no_state=True)
+        dnode.free()
 
     def load_data(self, data, expected_error=None) -> None:
         if expected_error:

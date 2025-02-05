@@ -6,6 +6,7 @@ import argparse
 import sys
 import ijson
 import json
+import pytest
 #import sonic_yang as sy
 from glob import glob
 from os import listdir
@@ -176,12 +177,14 @@ class Test_yang_models:
     """
     def loadConfigData(self, jInput, verify=None):
         s = ""
+        node = None
         try:
             node = self.ctx.parse_data_mem(jInput, "json", strict=True, no_state=True)
         except Exception as e:
             printExceptionDetails()
             s = str(e)
             log.info(s)
+            return s
 
         try:
             # verify the data tree if asked
@@ -200,6 +203,8 @@ class Test_yang_models:
                         s = 'verified'
         except Exception as e:
             printExceptionDetails()
+
+        node.free()
 
         return s
 
@@ -229,6 +234,7 @@ class Test_yang_models:
                 raise Exception(errstr)
         except Exception as e:
             printExceptionDetails()
+
         log.info(desc + " Failed\n")
         return FAIL
 
@@ -295,6 +301,10 @@ class Test_yang_models:
             for x in self.FailedTests:
                 print(x)
                 log.error(x)
+
+        if self.ctx:
+            self.ctx.destroy()
+            self.ctx = None
 
         assert ret == 0
         return
