@@ -160,7 +160,7 @@ class SonicYang(SonicYangExtMixin):
     def _load_data_file(self, data_file):
        try:
            with open(data_file, 'r') as f:
-               data_node = self.ctx.parse_data_file(f, "json", config=True, strict=True)
+               data_node = self.ctx.parse_data_file(f, "json", no_state=True, strict=True)
        except Exception as e:
            self.sysLog(msg="Failed to load data file: " + str(data_file), debug=syslog.LOG_ERR, doPrint=True)
            self.fail(e)
@@ -427,7 +427,7 @@ class SonicYang(SonicYangExtMixin):
 
             #source data node
             with open(str(data_file), 'r') as f:
-                source_node = ctx.parse_data_file(f, "json", config=True, strict=True)
+                source_node = ctx.parse_data_file(f, "json", no_state=True, strict=True)
 
             #merge
             self.root.merge(source_node)
