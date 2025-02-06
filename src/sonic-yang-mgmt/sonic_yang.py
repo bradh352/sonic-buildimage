@@ -65,7 +65,7 @@ class SonicYang(SonicYangExtMixin):
         # ['PORT', 'Ethernet0', 'speed']
         self.elementPath = []
         try:
-            self.ctx = ly.Context(yang_dir, sonic_yang_options)
+            self.ctx = ly.Context(yang_dir, loose_json_datatypes=True)
         except Exception as e:
             self.fail(e)
 
@@ -99,8 +99,8 @@ class SonicYang(SonicYangExtMixin):
     """
     def _load_schema_module(self, yang_file):
         try:
-            f = open(yang_file, 'r')
-            return self.ctx.parse_module_file(f, "yang")
+            with open(yang_file, 'r') as f:
+                return self.ctx.parse_module_file(f, "yang")
         except Exception as e:
             self.sysLog(msg="Failed to load yang module file: " + yang_file, debug=syslog.LOG_ERR, doPrint=True)
             self.fail(e)
@@ -139,13 +139,13 @@ class SonicYang(SonicYangExtMixin):
         if not yang_dir:
             yang_dir = self.yang_dir
 
-        ctx = ly.Context(yang_dir)
+        ctx = ly.Context(yang_dir, loose_json_datatypes=True)
 
         py = glob(yang_dir+"/*.yang")
         for file in py:
             try:
-                f = open(file, 'r')
-                ctx.parse_module_file(f, "yang")
+                with open(file, 'r') as f:
+                    ctx.parse_module_file(f, "yang")
             except Exception as e:
                 self.sysLog(msg="Failed to parse yang module file: " + file, debug=syslog.LOG_ERR, doPrint=True)
                 self.fail(e)
@@ -159,8 +159,8 @@ class SonicYang(SonicYangExtMixin):
     """
     def _load_data_file(self, data_file):
        try:
-           f = open(data_file, 'r')
-           data_node = self.ctx.parse_data_file(f, "json", config=True, strict=True)
+           with open(data_file, 'r') as f:
+               data_node = self.ctx.parse_data_file(f, "json", config=True, strict=True)
        except Exception as e:
            self.sysLog(msg="Failed to load data file: " + str(data_file), debug=syslog.LOG_ERR, doPrint=True)
            self.fail(e)
@@ -192,7 +192,7 @@ class SonicYang(SonicYangExtMixin):
     """
     def _load_data_model(self, yang_dir, yang_files, data_files, output=None):
         if (self.ctx is None):
-            self.ctx = ly.Context(yang_dir)
+            self.ctx = ly.Context(yang_dir, loose_json_datatypes=True)
 
         try:
             self._load_schema_module_list(yang_files)
@@ -426,8 +426,8 @@ class SonicYang(SonicYangExtMixin):
             ctx = self._load_schema_modules_ctx(yang_dir)
 
             #source data node
-            f = open(str(data_file), 'r')
-            source_node = ctx.parse_data_file(f, "json", config=True, strict=True)
+            with open(str(data_file), 'r') as f:
+                source_node = ctx.parse_data_file(f, "json", config=True, strict=True)
 
             #merge
             self.root.merge(source_node)
