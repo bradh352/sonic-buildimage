@@ -1,6 +1,6 @@
 # This script is used to
 
-import yang as ly
+import libyang as ly
 import logging
 import argparse
 import sys
@@ -53,6 +53,7 @@ class Test_yang_models:
         }
 
         self.ExceptionTests = { }
+        self.FailedTests = []
 
         for test_file in glob("./tests/yang_model_tests/tests/*.json"):
             try:
@@ -112,11 +113,12 @@ class Test_yang_models:
             # load yang modules
             for file in yangFiles:
                 log.debug(file)
-                m = self.ctx.parse_module_path(file, ly.LYS_IN_YANG)
-                if m is not None:
-                    log.info("module: {} is loaded successfully".format(m.name()))
-                else:
-                    log.info("Could not load module: {}".format(file))
+                with open(file, 'r') as f:
+                    m = self.ctx.parse_module_file(f, "yang")
+                    if m is not None:
+                        log.info("module: {} is loaded successfully".format(m.name()))
+                    else:
+                        log.info("Could not load module: {}".format(file))
 
         except Exception as e:
             printExceptionDetails()
@@ -169,25 +171,30 @@ class Test_yang_models:
     def loadConfigData(self, jInput, verify=None):
         s = ""
         try:
-            node = self.ctx.parse_data_mem(jInput, ly.LYD_JSON, \
-            ly.LYD_OPT_CONFIG | ly.LYD_OPT_STRICT)
+            node = self.ctx.parse_data_mem(jInput, "json", strict=True, no_state=True)
+        except Exception as e:
+            printExceptionDetails()
+            s = str(e)
+            log.info(s)
+
+        try:
             # verify the data tree if asked
             if verify is not None:
                 xpath = verify['xpath']
                 log.info("Verify xpath: {}".format(xpath))
-                set = node.find_path(xpath)
-                for dnode in set.data():
+                nodes = node.find_all(xpath)
+                for dnode in nodes:
                     if (xpath == dnode.path()):
                         log.info("Verify dnode: {}".format(dnode.path()))
-                        data = dnode.print_mem(ly.LYD_JSON, ly.LYP_WITHSIBLINGS \
-                            | ly.LYP_FORMAT | ly.LYP_WD_ALL)
+                        data = dnode.print_mem("json", with_siblings=True, pretty=True, include_implicit_defaults=True)
                         data = json.loads(data)
-                        log.info("Verify data: {}".format(data))
+                        log.info("Verify path value {} is {} in {}".format(verify['key'], verify['value'], data))
+                        assert (verify['key'] in data)
                         assert (data[verify['key']] == verify['value'])
                         s = 'verified'
         except Exception as e:
-            s = str(e)
-            log.info(s)
+            printExceptionDetails()
+
         return s
 
     """
@@ -211,7 +218,9 @@ class Test_yang_models:
                 log.info(desc + " Passed\n")
                 return PASS
             else:
-                raise Exception("Mismatch {} and {}".format(eStr, s))
+                errstr = "{}: Mismatch {} and {}".format(test, eStr, s)
+                self.FailedTests.append(errstr)
+                raise Exception(errstr)
         except Exception as e:
             printExceptionDetails()
         log.info(desc + " Failed\n")
@@ -243,7 +252,9 @@ class Test_yang_models:
                 log.debug(jInput)
                 s = self.loadConfigData(json.dumps(jInput))
                 if s!="":
-                    raise Exception("{} in not empty".format(s))
+                    errstr="{}[{}]: {} in not empty".format(test,i,s)
+                    self.FailedTests.append(errstr)
+                    raise Exception(errstr)
             return PASS
         except Exception as e:
             printExceptionDetails()
@@ -271,6 +282,13 @@ class Test_yang_models:
         except Exception as e:
             ret = FAIL * len(self.tests)
             printExceptionDetails()
+
+        if len(self.FailedTests):
+            print("{} Failures:".format(len(self.FailedTests)))
+            log.error("{} Failures:".format(len(self.FailedTests)))
+            for x in self.FailedTests:
+                print(x)
+                log.error(x)
 
         assert ret == 0
         return
