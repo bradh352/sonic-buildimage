@@ -1174,7 +1174,7 @@ class SonicYangExtMixin:
           self._xlateConfigDB(xlateFile=xlateFile)
           #print(self.xlateJson)
           self.sysLog(msg="Try to load Data in the tree")
-          self.root = self.ctx.parse_data_mem(dumps(self.xlateJson), "json", config=True, strict=True)
+          self.root = self.ctx.parse_data_mem(dumps(self.xlateJson), "json", no_state=True, strict=True)
 
        except Exception as e:
            self.root = None
