@@ -52,7 +52,7 @@
     },
     "POLICER_PIR_WITHOUT_CIR": {
         "desc": "Configure policer with pir but without cir.",
-        "eStr": ["pir can't be configured without cir."]
+        "eStr": ["cbs can't be configured without cir"]
     },
     "POLICER_WHEN_SRTCM_WITH_PIR": {
         "desc": "Configure policer with pir configured in sr_tcm mode.",

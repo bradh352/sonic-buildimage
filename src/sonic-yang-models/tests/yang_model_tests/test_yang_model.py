@@ -39,16 +39,22 @@ class Test_yang_models:
     def initTest(self):
         self.defaultYANGFailure = {
             'Must': ['Must condition', 'not satisfied'],
-            'InvalidValue': ['Invalid value'],
-            'LeafRef': ['Leafref', 'non-existing'],
+            'InvalidValue': ['Invalid', 'value', 'Data path'],
+            'LeafRef': ['Invalid leafref', 'no target instance'],
             'When': ['When condition', 'not satisfied'],
-            'Pattern': ['pattern', 'does not satisfy'],
-            'Mandatory': ['required element', 'Missing'],
+            'Pattern': ['pattern', 'Unsatisfied pattern'],
+            'Mandatory': ['Mandatory node', 'does not exist'],
             'Verify': ['verified'],
-            'Range': ['does not satisfy', 'range'],
+            'Range': ['Unsatisfied range'],
+            'Length': ['Unsatisfied length'],
             'MinElements': ['Too few'],
             'MaxElements': ['Too many'],
-            'UnknownElement': ['Unknown element'],
+            'UnknownElement': ['Node', 'not found as a child'],
+            'DecimalFractionExceed': ['Value', 'exceeds defined number', 'fraction digits'],
+            'Bounds': ['Value', 'out of type', 'min/max bounds'],
+            'ListKey': ['List instance is missing its key'],
+            'DateTime': ['Invalid date-and-time'],
+            'IPv4': ['Failed to convert IPv4 address'],
             'None': []
         }
 

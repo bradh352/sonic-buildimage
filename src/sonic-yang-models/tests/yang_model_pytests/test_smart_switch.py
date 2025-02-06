@@ -32,7 +32,7 @@ class TestSmartSwitch:
     @pytest.mark.parametrize(
         "bridge_name, error_message", [
             ("bridge-midplane", None),
-            ("wrong_name", 'Value "wrong_name" does not satisfy the constraint "bridge-midplane"')]
+            ("wrong_name", 'Unsatisfied pattern')]
         )
     def test_bridge_name(self, yang_model, bridge_name, error_message):
         data = {
@@ -51,7 +51,7 @@ class TestSmartSwitch:
     @pytest.mark.parametrize(
         "ip_prefix, error_message", [
             ("169.254.200.254/24", None),
-            ("169.254.xyz.254/24", 'Value "169.254.xyz.254/24" does not satisfy the constraint')]
+            ("169.254.xyz.254/24", 'Unsatisfied pattern')]
         )
     def test_bridge_ip_prefix(self, yang_model, ip_prefix, error_message):
         data = {
@@ -70,7 +70,7 @@ class TestSmartSwitch:
     @pytest.mark.parametrize(
         "dpu_name, error_message", [
             ("dpu0", None),
-            ("xyz", 'Value "xyz" does not satisfy the constraint "dpu[0-9]+')]
+            ("xyz", 'Unsatisfied pattern')]
         )
     def test_dpu_name(self, yang_model, dpu_name, error_message):
         data = {
@@ -91,7 +91,7 @@ class TestSmartSwitch:
     @pytest.mark.parametrize(
         "midplane_interface, error_message", [
             ("dpu0", None),
-            ("xyz", 'Value "xyz" does not satisfy the constraint "dpu[0-9]+')]
+            ("xyz", 'Unsatisfied pattern')]
         )
     def test_dpu_midplane_interface(self, yang_model, midplane_interface, error_message):
         data = {
