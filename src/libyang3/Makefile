@@ -30,6 +30,7 @@ $(addprefix $(DEST)/, $(MAIN_TARGET)): $(DEST)/% :
 
 	# Enable large file support for 32-bit arch
 	echo 'add_definitions(-D_FILE_OFFSET_BITS=64)' >> CMakeLists.txt
+	patch -p1 < ../patch/01-loosen-json-datatypes.patch
 
 ifeq ($(CROSS_BUILD_ENVIRON), y)
 	dpkg-buildpackage -rfakeroot -d -b -us -uc -a$(CONFIGURED_ARCH) -Pcross,nocheck -j$(SONIC_CONFIG_MAKE_JOBS)
