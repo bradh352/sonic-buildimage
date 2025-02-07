@@ -108,9 +108,9 @@ https://sonicstorage.blob.core.windows.net/debian/pool/main/l/lldpd/lldpd_1.0.16
 https://sonicstorage.blob.core.windows.net/debian/pool/main/l/lldpd/lldpd_1.0.16-1+deb12u1.dsc==d566d5f5ff64eaff40c2013468919c73
 https://sonicstorage.blob.core.windows.net/debian/pool/main/l/lldpd/lldpd_1.0.16.orig.tar.gz==3b8aa604d32a4acc34345987d2d7d631
 https://sonicstorage.blob.core.windows.net/debian/pool/main/l/lldpd/lldpd_1.0.16.orig.tar.gz.asc==273f3e4f9f68314c3e59f694adf08024
-https://sonicstorage.blob.core.windows.net/debian/pool/main/liby/libyang/libyang2_2.1.148-0.2.debian.tar.xz==2385ff45433e3239e962791228c94ba5
-https://sonicstorage.blob.core.windows.net/debian/pool/main/liby/libyang/libyang2_2.1.148-0.2.dsc==121866bf803a7d1fab455088de5a9733
-https://sonicstorage.blob.core.windows.net/debian/pool/main/liby/libyang/libyang2_2.1.148.orig.tar.xz==ca6915c2c2e02525630777a626224ec7
+http://debian-archive.trafficmanager.net/debian/pool/main/liby/libyang/libyang_3.7.8-1.debian.tar.xz==dca761f813ca7f8ea9a11e758a428932
+http://debian-archive.trafficmanager.net/debian/pool/main/liby/libyang/libyang_3.7.8-1.dsc==5962c4831cf14bd14ba5156f935beb95
+http://debian-archive.trafficmanager.net/debian/pool/main/liby/libyang/libyang_3.7.8.orig.tar.xz==686529fb9dc8a5b17b28b874934abd9c
 https://sonicstorage.blob.core.windows.net/debian/pool/main/n/net-snmp/net-snmp_5.7.3+dfsg-5.debian.tar.xz==ad957e90207d0669beb2109e4e325def
 https://sonicstorage.blob.core.windows.net/debian/pool/main/n/net-snmp/net-snmp_5.7.3+dfsg-5.dsc==2443e4dffbdb020e7ab4f947a7904912
 https://sonicstorage.blob.core.windows.net/debian/pool/main/n/net-snmp/net-snmp_5.7.3+dfsg.orig.tar.xz==6391ae27eb1ae34ff5530712bb1c4209
