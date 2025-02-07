@@ -1,0 +1,397 @@
+From 3ebc92046d210af93965c5dfe8e69230b59e18e7 Mon Sep 17 00:00:00 2001
+From: Brad House <brad@brad-house.com>
+Date: Tue, 4 Feb 2025 20:13:02 -0500
+Subject: [PATCH] loosen validation
+
+---
+ src/context.h                            |  4 ++++
+ src/plugins_types.c                      | 13 ++++++++-----
+ src/plugins_types.h                      |  5 +++--
+ src/plugins_types/binary.c               |  2 +-
+ src/plugins_types/bits.c                 |  2 +-
+ src/plugins_types/boolean.c              |  2 +-
+ src/plugins_types/date_and_time.c        |  2 +-
+ src/plugins_types/decimal64.c            |  2 +-
+ src/plugins_types/empty.c                |  2 +-
+ src/plugins_types/enumeration.c          |  2 +-
+ src/plugins_types/hex_string.c           |  2 +-
+ src/plugins_types/identityref.c          |  2 +-
+ src/plugins_types/instanceid.c           |  2 +-
+ src/plugins_types/instanceid_keys.c      |  2 +-
+ src/plugins_types/integer.c              |  4 ++--
+ src/plugins_types/ipv4_address.c         |  2 +-
+ src/plugins_types/ipv4_address_no_zone.c |  2 +-
+ src/plugins_types/ipv4_prefix.c          |  2 +-
+ src/plugins_types/ipv6_address.c         |  2 +-
+ src/plugins_types/ipv6_address_no_zone.c |  2 +-
+ src/plugins_types/ipv6_prefix.c          |  2 +-
+ src/plugins_types/node_instanceid.c      |  2 +-
+ src/plugins_types/string.c               |  2 +-
+ src/plugins_types/xpath1.0.c             |  2 +-
+ 24 files changed, 37 insertions(+), 29 deletions(-)
+
+diff --git a/src/context.h b/src/context.h
+index a9ad91f40..0ddb69e90 100644
+--- a/src/context.h
++++ b/src/context.h
+@@ -207,6 +207,10 @@ struct ly_ctx;
+                                         loaded except for built-in YANG types so all derived types will use these and
+                                         for all purposes behave as the base type. The option can be used for cases when
+                                         invalid data needs to be stored in YANG node values. */
++#define LY_CTX_LOOSE_JSON_DATATYPES 0x1000 /**< By default, JSON data values are validated to be in the proper format.  For
++                                        instance numbers are expected to not be enclosed in quotes, nor are boolean
++                                        values.  Setting this context option will disable this validation.  Prior to
++                                        v1.0.212 this was the default behavior. */
+ 
+ /** @} contextoptions */
+ 
+diff --git a/src/plugins_types.c b/src/plugins_types.c
+index d773a8a75..43aaf0b7a 100644
+--- a/src/plugins_types.c
++++ b/src/plugins_types.c
+@@ -666,8 +666,8 @@ type_get_hints_base(uint32_t hints)
+ }
+ 
+ LIBYANG_API_DEF LY_ERR
+-lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_DATA_TYPE type, int *base,
+-        struct ly_err_item **err)
++lyplg_type_check_hints(const struct ly_ctx *ctx, uint32_t hints, const char *value, size_t value_len,
++        LY_DATA_TYPE type, int *base, struct ly_err_item **err)
+ {
+     LY_CHECK_ARG_RET(NULL, value || !value_len, err, LY_EINVAL);
+ 
+@@ -685,7 +685,8 @@ lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_D
+     case LY_TYPE_INT32:
+         LY_CHECK_ARG_RET(NULL, base, LY_EINVAL);
+ 
+-        if (!(hints & (LYD_VALHINT_DECNUM | LYD_VALHINT_OCTNUM | LYD_VALHINT_HEXNUM))) {
++        if (!(hints & (LYD_VALHINT_DECNUM | LYD_VALHINT_OCTNUM | LYD_VALHINT_HEXNUM)) &&
++            !(ly_ctx_get_options(ctx) & LY_CTX_LOOSE_JSON_DATATYPES)) {
+             return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid non-number-encoded %s value \"%.*s\".",
+                     lys_datatype2str(type), (int)value_len, value);
+         }
+@@ -695,7 +696,8 @@ lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_D
+     case LY_TYPE_INT64:
+         LY_CHECK_ARG_RET(NULL, base, LY_EINVAL);
+ 
+-        if (!(hints & LYD_VALHINT_NUM64)) {
++        if (!(hints & LYD_VALHINT_NUM64) &&
++            !(ly_ctx_get_options(ctx) & LY_CTX_LOOSE_JSON_DATATYPES)) {
+             return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid non-num64-encoded %s value \"%.*s\".",
+                     lys_datatype2str(type), (int)value_len, value);
+         }
+@@ -714,7 +716,8 @@ lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_D
+         }
+         break;
+     case LY_TYPE_BOOL:
+-        if (!(hints & LYD_VALHINT_BOOLEAN)) {
++        if (!(hints & LYD_VALHINT_BOOLEAN) &&
++            !(ly_ctx_get_options(ctx) & LY_CTX_LOOSE_JSON_DATATYPES)) {
+             return ly_err_new(err, LY_EVALID, LYVE_DATA, NULL, NULL, "Invalid non-boolean-encoded %s value \"%.*s\".",
+                     lys_datatype2str(type), (int)value_len, value);
+         }
+diff --git a/src/plugins_types.h b/src/plugins_types.h
+index 06acc3802..24f8c9ebc 100644
+--- a/src/plugins_types.h
++++ b/src/plugins_types.h
+@@ -243,6 +243,7 @@ LIBYANG_API_DECL void ly_err_free(void *ptr);
+  *
+  * Use only in implementations of ::lyplg_type_store_clb which provide all the necessary parameters for this function.
+  *
++ * @param[in] ctx libyang context.
+  * @param[in] hints Bitmap of [value hints](@ref lydvalhints) of all the allowed value types provided by parsers
+  *            to ::lyplg_type_store_clb.
+  * @param[in] value Lexical representation of the value to be stored.
+@@ -253,8 +254,8 @@ LIBYANG_API_DECL void ly_err_free(void *ptr);
+  * @param[out] err Pointer to store error information in case of failure.
+  * @return LY_ERR value
+  */
+-LIBYANG_API_DECL LY_ERR lyplg_type_check_hints(uint32_t hints, const char *value, size_t value_len, LY_DATA_TYPE type,
+-        int *base, struct ly_err_item **err);
++LIBYANG_API_DECL LY_ERR lyplg_type_check_hints(const struct ly_ctx *ctx, uint32_t hints, const char *value,
++        size_t value_len, LY_DATA_TYPE type, int *base, struct ly_err_item **err);
+ 
+ /**
+  * @brief Check that the value of a type is allowed based on its status.
+diff --git a/src/plugins_types/binary.c b/src/plugins_types/binary.c
+index a0204385d..516bc0057 100644
+--- a/src/plugins_types/binary.c
++++ b/src/plugins_types/binary.c
+@@ -289,7 +289,7 @@ lyplg_type_store_binary(const struct ly_ctx *ctx, const struct lysc_type *type,
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if (format != LY_VALUE_CANON) {
+diff --git a/src/plugins_types/bits.c b/src/plugins_types/bits.c
+index badf2b1e9..0f9ec40f0 100644
+--- a/src/plugins_types/bits.c
++++ b/src/plugins_types/bits.c
+@@ -328,7 +328,7 @@ lyplg_type_store_bits(const struct ly_ctx *ctx, const struct lysc_type *type, co
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* allocate the bitmap */
+diff --git a/src/plugins_types/boolean.c b/src/plugins_types/boolean.c
+index 3e055d278..d90de6d8d 100644
+--- a/src/plugins_types/boolean.c
++++ b/src/plugins_types/boolean.c
+@@ -67,7 +67,7 @@ lyplg_type_store_boolean(const struct ly_ctx *ctx, const struct lysc_type *type,
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* validate and store the value */
+diff --git a/src/plugins_types/date_and_time.c b/src/plugins_types/date_and_time.c
+index 1d013c15f..884aff987 100644
+--- a/src/plugins_types/date_and_time.c
++++ b/src/plugins_types/date_and_time.c
+@@ -98,7 +98,7 @@ lyplg_type_store_date_and_time(const struct ly_ctx *ctx, const struct lysc_type
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* convert to UNIX time and fractions of second, function must check for all the possible errors */
+diff --git a/src/plugins_types/decimal64.c b/src/plugins_types/decimal64.c
+index a6ac54b55..fc28d2b3e 100644
+--- a/src/plugins_types/decimal64.c
++++ b/src/plugins_types/decimal64.c
+@@ -108,7 +108,7 @@ lyplg_type_store_decimal64(const struct ly_ctx *ctx, const struct lysc_type *typ
+         num = le64toh(num);
+     } else {
+         /* check hints */
+-        ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++        ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+         LY_CHECK_GOTO(ret, cleanup);
+ 
+         /* parse decimal64 value */
+diff --git a/src/plugins_types/empty.c b/src/plugins_types/empty.c
+index b7b82dcfd..94954c60b 100644
+--- a/src/plugins_types/empty.c
++++ b/src/plugins_types/empty.c
+@@ -46,7 +46,7 @@ lyplg_type_store_empty(const struct ly_ctx *ctx, const struct lysc_type *type, c
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* validation */
+diff --git a/src/plugins_types/enumeration.c b/src/plugins_types/enumeration.c
+index 462b7e3bc..bc76a1020 100644
+--- a/src/plugins_types/enumeration.c
++++ b/src/plugins_types/enumeration.c
+@@ -92,7 +92,7 @@ lyplg_type_store_enum(const struct ly_ctx *ctx, const struct lysc_type *type, co
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* find the matching enumeration value item */
+diff --git a/src/plugins_types/hex_string.c b/src/plugins_types/hex_string.c
+index b013cf407..f73122113 100644
+--- a/src/plugins_types/hex_string.c
++++ b/src/plugins_types/hex_string.c
+@@ -52,7 +52,7 @@ lyplg_type_store_hex_string(const struct ly_ctx *ctx, const struct lysc_type *ty
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* make a copy, it is needed for canonization */
+diff --git a/src/plugins_types/identityref.c b/src/plugins_types/identityref.c
+index 757595cdb..8f520aa1d 100644
+--- a/src/plugins_types/identityref.c
++++ b/src/plugins_types/identityref.c
+@@ -243,7 +243,7 @@ lyplg_type_store_identityref(const struct ly_ctx *ctx, const struct lysc_type *t
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* find a matching identity */
+diff --git a/src/plugins_types/instanceid.c b/src/plugins_types/instanceid.c
+index 46bb4baef..2bfbc5c7e 100644
+--- a/src/plugins_types/instanceid.c
++++ b/src/plugins_types/instanceid.c
+@@ -169,7 +169,7 @@ lyplg_type_store_instanceid(const struct ly_ctx *ctx, const struct lysc_type *ty
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* compile instance-identifier into path */
+diff --git a/src/plugins_types/instanceid_keys.c b/src/plugins_types/instanceid_keys.c
+index 12d28e5d4..3718cf854 100644
+--- a/src/plugins_types/instanceid_keys.c
++++ b/src/plugins_types/instanceid_keys.c
+@@ -150,7 +150,7 @@ lyplg_type_store_instanceid_keys(const struct ly_ctx *ctx, const struct lysc_typ
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* length restriction of the string */
+diff --git a/src/plugins_types/integer.c b/src/plugins_types/integer.c
+index ac165acdb..68ab17be3 100644
+--- a/src/plugins_types/integer.c
++++ b/src/plugins_types/integer.c
+@@ -73,7 +73,7 @@ lyplg_type_store_int(const struct ly_ctx *ctx, const struct lysc_type *type, con
+         num = le64toh(num);
+     } else {
+         /* check hints */
+-        ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, &base, err);
++        ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, &base, err);
+         LY_CHECK_GOTO(ret, cleanup);
+ 
+         /* parse the integer */
+@@ -339,7 +339,7 @@ lyplg_type_store_uint(const struct ly_ctx *ctx, const struct lysc_type *type, co
+         num = le64toh(num);
+     } else {
+         /* check hints */
+-        ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, &base, err);
++        ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, &base, err);
+         LY_CHECK_GOTO(ret, cleanup);
+ 
+         /* parse the integer */
+diff --git a/src/plugins_types/ipv4_address.c b/src/plugins_types/ipv4_address.c
+index 0ed6d36a1..93b9694f2 100644
+--- a/src/plugins_types/ipv4_address.c
++++ b/src/plugins_types/ipv4_address.c
+@@ -168,7 +168,7 @@ lyplg_type_store_ipv4_address(const struct ly_ctx *ctx, const struct lysc_type *
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if (!(options & LYPLG_TYPE_STORE_ONLY)) {
+diff --git a/src/plugins_types/ipv4_address_no_zone.c b/src/plugins_types/ipv4_address_no_zone.c
+index 5a0f00900..2600386ce 100644
+--- a/src/plugins_types/ipv4_address_no_zone.c
++++ b/src/plugins_types/ipv4_address_no_zone.c
+@@ -81,7 +81,7 @@ lyplg_type_store_ipv4_address_no_zone(const struct ly_ctx *ctx, const struct lys
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* we always need a dynamic value */
+diff --git a/src/plugins_types/ipv4_prefix.c b/src/plugins_types/ipv4_prefix.c
+index 4d1916ef8..3fe306c29 100644
+--- a/src/plugins_types/ipv4_prefix.c
++++ b/src/plugins_types/ipv4_prefix.c
+@@ -153,7 +153,7 @@ lyplg_type_store_ipv4_prefix(const struct ly_ctx *ctx, const struct lysc_type *t
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if (!(options & LYPLG_TYPE_STORE_ONLY)) {
+diff --git a/src/plugins_types/ipv6_address.c b/src/plugins_types/ipv6_address.c
+index 147df3e45..7222bbabd 100644
+--- a/src/plugins_types/ipv6_address.c
++++ b/src/plugins_types/ipv6_address.c
+@@ -169,7 +169,7 @@ lyplg_type_store_ipv6_address(const struct ly_ctx *ctx, const struct lysc_type *
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if (!(options & LYPLG_TYPE_STORE_ONLY)) {
+diff --git a/src/plugins_types/ipv6_address_no_zone.c b/src/plugins_types/ipv6_address_no_zone.c
+index 76d47ae25..4d5ec8ef9 100644
+--- a/src/plugins_types/ipv6_address_no_zone.c
++++ b/src/plugins_types/ipv6_address_no_zone.c
+@@ -132,7 +132,7 @@ lyplg_type_store_ipv6_address_no_zone(const struct ly_ctx *ctx, const struct lys
+     LY_CHECK_ERR_GOTO(!val, ret = LY_EMEM, cleanup);
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* get the network-byte order address, validates the value */
+diff --git a/src/plugins_types/ipv6_prefix.c b/src/plugins_types/ipv6_prefix.c
+index 4643e8523..fb44f952a 100644
+--- a/src/plugins_types/ipv6_prefix.c
++++ b/src/plugins_types/ipv6_prefix.c
+@@ -167,7 +167,7 @@ lyplg_type_store_ipv6_prefix(const struct ly_ctx *ctx, const struct lysc_type *t
+     LY_CHECK_ERR_GOTO(!val, ret = LY_EMEM, cleanup);
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if (!(options & LYPLG_TYPE_STORE_ONLY)) {
+diff --git a/src/plugins_types/node_instanceid.c b/src/plugins_types/node_instanceid.c
+index ab141d5f3..a09a109eb 100644
+--- a/src/plugins_types/node_instanceid.c
++++ b/src/plugins_types/node_instanceid.c
+@@ -185,7 +185,7 @@ lyplg_type_store_node_instanceid(const struct ly_ctx *ctx, const struct lysc_typ
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     if ((((char *)value)[0] == '/') && (value_len == 1)) {
+diff --git a/src/plugins_types/string.c b/src/plugins_types/string.c
+index d1888f398..65084a6b8 100644
+--- a/src/plugins_types/string.c
++++ b/src/plugins_types/string.c
+@@ -77,7 +77,7 @@ lyplg_type_store_string(const struct ly_ctx *ctx, const struct lysc_type *type,
+     }
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* store canonical value */
+diff --git a/src/plugins_types/xpath1.0.c b/src/plugins_types/xpath1.0.c
+index 0c5dfce2d..e2f2ec6bd 100644
+--- a/src/plugins_types/xpath1.0.c
++++ b/src/plugins_types/xpath1.0.c
+@@ -258,7 +258,7 @@ lyplg_type_store_xpath10(const struct ly_ctx *ctx, const struct lysc_type *type,
+     storage->realtype = type;
+ 
+     /* check hints */
+-    ret = lyplg_type_check_hints(hints, value, value_len, type->basetype, NULL, err);
++    ret = lyplg_type_check_hints(ctx, hints, value, value_len, type->basetype, NULL, err);
+     LY_CHECK_GOTO(ret, cleanup);
+ 
+     /* parse */
