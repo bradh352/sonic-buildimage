@@ -1,0 +1,43 @@
+From 002319e670c8008908148ba22e620ae821352720 Mon Sep 17 00:00:00 2001
+From: Brad House <brad@brad-house.com>
+Date: Tue, 4 Feb 2025 21:12:21 -0500
+Subject: [PATCH] loose datatypes
+
+---
+ cffi/cdefs.h       | 1 +
+ libyang/context.py | 3 +++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/cffi/cdefs.h b/cffi/cdefs.h
+index e48a817..2e94c8f 100644
+--- a/cffi/cdefs.h
++++ b/cffi/cdefs.h
+@@ -17,6 +17,7 @@ struct ly_ctx;
+ #define LY_CTX_LEAFREF_EXTENDED ...
+ #define LY_CTX_LEAFREF_LINKING ...
+ #define LY_CTX_BUILTIN_PLUGINS_ONLY ...
++#define LY_CTX_LOOSE_JSON_DATATYPES ...
+ 
+ 
+ typedef enum {
+diff --git a/libyang/context.py b/libyang/context.py
+index 1b1d4cd..2650a46 100644
+--- a/libyang/context.py
++++ b/libyang/context.py
+@@ -195,6 +195,7 @@ def __init__(
+         leafref_extended: bool = False,
+         leafref_linking: bool = False,
+         builtin_plugins_only: bool = False,
++        loose_json_datatypes: bool = False,
+         yanglib_path: Optional[str] = None,
+         yanglib_fmt: str = "json",
+         cdata=None,  # C type: "struct ly_ctx *"
+@@ -217,6 +218,8 @@ def __init__(
+             options |= lib.LY_CTX_LEAFREF_LINKING
+         if builtin_plugins_only:
+             options |= lib.LY_CTX_BUILTIN_PLUGINS_ONLY
++        if loose_json_datatypes:
++            options |= lib.LY_CTX_LOOSE_JSON_DATATYPES
+         # force priv parsed
+         options |= lib.LY_CTX_SET_PRIV_PARSED
+ 
