@@ -1,0 +1,102 @@
+From 7e3672c4b9863d2ea82546751c25d44a066a5ec1 Mon Sep 17 00:00:00 2001
+From: Brad House <brad@brad-house.com>
+Date: Fri, 28 Feb 2025 10:20:07 -0500
+Subject: [PATCH] validate: unions with leafrefs may return misleading error
+ codes
+
+When a leafref is not found in a union, it should not return an error
+indicating the value for the leafref wouldn't match the restrictions
+for a target but instead just say the leafref target wasn't found.
+
+The only data that should indicate the error message for data type
+restrictions is data associated with the target itself, not leafrefs.
+
+Signed-off-by: Brad House <brad@brad-house.com>
+---
+ src/plugins_types/union.c  | 33 +++++++++++++++++++++++++++++++++
+ tests/utests/types/union.c |  7 ++++---
+ 2 files changed, 37 insertions(+), 3 deletions(-)
+
+diff --git a/src/plugins_types/union.c b/src/plugins_types/union.c
+index 61dde35d9..e1bb1a26d 100644
+--- a/src/plugins_types/union.c
++++ b/src/plugins_types/union.c
+@@ -150,6 +150,31 @@ lyb_parse_union(const void *lyb_data, size_t lyb_data_len, uint32_t *type_idx, c
+     }
+ }
+ 
++static void
++union_lref_error_rewrite(const struct lyd_node *ctx_node, struct ly_err_item *err, struct lysc_type *type, const void *value, size_t value_len)
++{
++    struct lysc_type_leafref *lref;
++    char *valstr = NULL;
++
++    if ((err == NULL) || (type->basetype != LY_TYPE_LEAFREF)) {
++        return;
++    }
++
++    lref = (struct lysc_type_leafref *)type;
++    free(err->apptag);
++    err->apptag = strdup("instance-required");
++
++    free(err->msg);
++
++    if (lyd_get_value(ctx_node) != NULL) {
++        valstr = strdup(lyd_get_value(ctx_node));
++    } else {
++        valstr = strndup((const char *)value, value_len);
++    }
++    asprintf(&err->msg, LY_ERRMSG_NOLREF_VAL, valstr, lyxp_get_expr(lref->path));
++    free(valstr);
++}
++
+ /**
+  * @brief Store (and validate) subvalue as a specific type.
+  *
+@@ -190,6 +215,9 @@ union_store_type(const struct ly_ctx *ctx, struct lysc_type_union *type_u, uint3
+             if ((rc != LY_SUCCESS) && (rc != LY_EINCOMPLETE)) {
+                 /* clear any leftover/freed garbage */
+                 memset(&subvalue->value, 0, sizeof subvalue->value);
++
++                /* if this is a leafref, lets make sure we propagate the appropriate error, and not a type validation failure */
++                union_lref_error_rewrite(ctx_node, *err, type_u->types[ti], value, value_len);
+                 return rc;
+             }
+ 
+@@ -228,6 +256,11 @@ union_store_type(const struct ly_ctx *ctx, struct lysc_type_union *type_u, uint3
+     if ((rc != LY_SUCCESS) && (rc != LY_EINCOMPLETE)) {
+         /* clear any leftover/freed garbage */
+         memset(&subvalue->value, 0, sizeof subvalue->value);
++
++        /* if this is a leafref, lets make sure we propagate the appropriate error, and not a type validation failure */
++        if (type->basetype == LY_TYPE_LEAFREF) {
++            union_lref_error_rewrite(ctx_node, *err, type, value, value_len);
++        }
+         return rc;
+     }
+ 
+diff --git a/tests/utests/types/union.c b/tests/utests/types/union.c
+index c2541aaaf..257776b11 100644
+--- a/tests/utests/types/union.c
++++ b/tests/utests/types/union.c
+@@ -105,8 +105,8 @@ test_data_xml(void **state)
+     TEST_ERROR_XML2("",
+             "defs", "", "un1", "123456789012345678901", LY_EVALID);
+     CHECK_LOG_CTX("Invalid union value \"123456789012345678901\" - no matching subtype found:\n"
+-            "    libyang 2 - leafref, version 1: Invalid type int8 value \"123456789012345678901\".\n"
+-            "    libyang 2 - leafref, version 1: Invalid type int64 value \"123456789012345678901\".\n"
++            "    libyang 2 - leafref, version 1: Invalid leafref value \"123456789012345678901\" - no target instance \"/int8\" with the same value.\n"
++            "    libyang 2 - leafref, version 1: Invalid leafref value \"123456789012345678901\" - no target instance \"/int64\" with the same value.\n"
+             "    libyang 2 - identityref, version 1: Invalid identityref \"123456789012345678901\" value - identity not found in module \"defs\".\n"
+             "    libyang 2 - instance-identifier, version 1: Invalid instance-identifier \"123456789012345678901\" value - syntax error.\n"
+             "    libyang 2 - string, version 1: Unsatisfied length - string \"123456789012345678901\" length is not allowed.\n",
+@@ -295,7 +295,8 @@ test_validation(void **state)
+     assert_int_equal(LY_EVALID, lyd_validate_all(&tree, NULL, LYD_VALIDATE_PRESENT, NULL));
+     CHECK_LOG_CTX("Invalid LYB union value - no matching subtype found:\n"
+             "    libyang 2 - leafref, version 1: Invalid leafref value \"one\" - no target instance \"../../a/name\" with the same value.\n"
+-            "    libyang 2 - leafref, version 1: Invalid type uint32 value \"one\".\n", "/lref:test/community[name='test']/view", 0);
++            "    libyang 2 - leafref, version 1: Invalid leafref value \"one\" - no target instance \"../../b/name\" with the same value.\n",
++            "/lref:test/community[name='test']/view", 0);
+ 
+     lyd_free_all(tree);
+ }
