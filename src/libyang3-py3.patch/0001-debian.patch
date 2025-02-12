@@ -2,7 +2,7 @@ diff -ruN libyang-python.orig/debian/changelog libyang-python.new/debian/changel
 --- libyang-python.orig/debian/changelog	1970-01-01 00:00:00.000000000 +0000
 +++ libyang-python.new/debian/changelog	2025-02-09 12:45:51.113010546 +0000
 @@ -0,0 +1,5 @@
-+libyang-python (3.0.3-1) unstable; urgency=low
++libyang-python (3.0.3-1+b1sonic1) unstable; urgency=low
 +
 +  * source package automatically created by stdeb 0.10.0
 +
