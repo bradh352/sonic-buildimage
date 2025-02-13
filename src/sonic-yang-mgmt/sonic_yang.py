@@ -462,38 +462,67 @@ class SonicYang(SonicYangExtMixin):
                 raise Exception('data node not found')
 
             for data_set in node_set:
-                data_set.schema()
                 list.append(data_set.path())
             return list
 
+
     """
     find_schema_dependencies():  find the schema dependencies from schema xpath
-    input:    schema_xpath of the schema node
+    input:    schema_xpath       of the schema node
+              include_children   whether or not to include children of specified xpath
     returns:  - list of xpath of the dependencies
     """
-    def _find_schema_dependencies(self, schema_xpath):
-        return self.ctx.backlinks_find_leafref_nodes(schema_xpath)
+    def _find_schema_dependencies(self, schema_xpath, include_children: bool=False):
+        return self.ctx.backlinks_find_leafref_nodes(schema_xpath, include_children=include_children)
 
 
     """
-    find_data_dependencies():   find the data dependencies from data xpath
-    input:    data_xpath - xpath of data node. (Public)
+    find_data_dependencies(): find the data dependencies from data xpath  (Public)
+    input:    data_xpath - xpath to search.  If it references an exact data node
+                           only the references to that data node will be returned.
+                           If a path contains multiple data nodes, then all references
+                           to all child nodes will be returned.  If set to None (or "" or "/"),
+                           will return all references, globally.
     returns:  - list of xpath
               - Exception if error
     """
     def find_data_dependencies(self, data_xpath):
         ref_list = []
+        required_value = None
+        base_dnode = None
+        nodes = []
         node = self.root
-        try:
-            base_dnode = self._find_data_node(data_xpath)
-        except Exception as e:
-            self.sysLog(msg="find_data_dependencies(): Failed to find data node from xpath: {}".format(data_xapth), debug=syslog.LOG_ERR, doPrint=True)
-            return ref_list
 
-        # Grab the value associated with the data node and also get a list of all
-        # schema leafrefs pointing to this node.
+        if data_xpath is not None and (len(data_xpath) == 0 or data_xpath == "/"):
+            data_xpath = None
+
+        if data_xpath is not None:
+            try:
+                dnode_list = list(self.root.find_all(data_xpath))
+            except Exception as e:
+                self.sysLog(msg="find_data_dependencies(): Failed to find data node from xpath: {}".format(data_xapth), debug=syslog.LOG_ERR, doPrint=True)
+                return ref_list
+
+            if len(dnode_list) == 0:
+                raise Exception("no data nodes found for xpath specified")
+
+            # If exactly 1 node and its a data node, we need to match the value.
+            if len(dnode_list) == 1:
+                base_dnode = dnode_list[0]
+                try:
+                    required_value = self._find_data_node_value(data_xpath)
+                except Exception as e:
+                    pass
+
+        # Get a list of all schema leafrefs pointing to this node (or these data nodes).
         try:
-            lreflist = self.ctx.backlinks_find_leafref_nodes(base_dnode.schema().schema_path())
+            search_xpath = data_xpath
+            include_children = True
+            if required_value is not None:
+                search_xpath = base_dnode.schema().schema_path()
+                include_children = False
+
+            lreflist = self._find_schema_dependencies(schema_xpath=search_xpath, include_children=include_children)
             if lreflist is None:
                 raise Exception("no schema backlinks found")
         except Exception as e:
@@ -501,11 +530,13 @@ class SonicYang(SonicYangExtMixin):
             raise SonicYangException("Failed to find node or dependencies for \
                 {}\n{}".format(data_xpath, str(e)))
 
+        # For all found data nodes, emit the path to the data node.  If we need to
+        # restrict to a value, do so.
         for lref in lreflist:
             try:
                 data_set = self.root.find_all(lref)
                 for dnode in data_set:
-                    if dnode.value() == base_dnode.value():
+                    if required_value is None or dnode.value() == required_value:
                         ref_list.append(dnode.path())
             except Exception as e:
                 pass
