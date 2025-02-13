@@ -475,6 +475,23 @@ class SonicYang(SonicYangExtMixin):
     def _find_schema_dependencies(self, schema_xpath, include_children: bool=False):
         return self.ctx.backlinks_find_leafref_nodes(schema_xpath, include_children=include_children)
 
+    """
+    load_module_str_name(): load a module based on the provided string and return
+                            the loaded module name.  This is needed by
+                            sonic-yang-modules to prevent direct dependency on
+                            libyang.
+    input: yang_module_str yang-formatted module
+    returns: module name on success, exception on failure
+    """
+    def load_module_str_name(yang_module_str):
+        try:
+            module = self.ctx.parse_module_str(yang_module_str)
+        except Exception as e:
+            self.fail(e);
+        else:
+            return module.name()
+
+        return None
 
     """
     find_data_dependencies(): find the data dependencies from data xpath  (Public)
