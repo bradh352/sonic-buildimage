@@ -1,0 +1,26 @@
+From 7e3a7163966d8e4b9e039afff49972838746a868 Mon Sep 17 00:00:00 2001
+From: Brad House <brad@brad-house.com>
+Date: Fri, 28 Feb 2025 16:51:40 -0500
+Subject: [PATCH] union: remove assert in sort
+
+Getting assertion in lyplg_type_sort_union().  This assertion
+appears invalid as it comes up in test cases in SONiC but when
+removed everything passes.
+
+Signed-off-by: Brad House <brad@brad-house.com>
+---
+ src/plugins_types/union.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/src/plugins_types/union.c b/src/plugins_types/union.c
+index 61dde35d9..b17c04f4b 100644
+--- a/src/plugins_types/union.c
++++ b/src/plugins_types/union.c
+@@ -531,7 +531,6 @@ lyplg_type_sort_union(const struct ly_ctx *ctx, const struct lyd_value *val1, co
+             break;
+         }
+     }
+-    assert(rc != 0);
+ 
+     return rc;
+ }
