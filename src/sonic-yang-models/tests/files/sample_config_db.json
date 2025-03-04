@@ -1870,6 +1870,8 @@
         },
         "BGP_NEIGHBOR_AF": {
             "default|192.168.1.1|ipv4_unicast": {
+                "route_map_in": [ "map1" ],
+                "route_map_out": [ "map1" ]
             }
         },
         "BGP_PEER_GROUP": {
@@ -1878,6 +1880,8 @@
         },
         "BGP_PEER_GROUP_AF": {
             "default|PG1|ipv4_unicast": {
+                "route_map_in": [ "map1" ],
+                "route_map_out": [ "map1" ]
             }
         },
         "BGP_GLOBALS_LISTEN_PREFIX": {
